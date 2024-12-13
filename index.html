@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sitemap Viewer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <div id="app" class="p-4 max-w-4xl mx-auto bg-white rounded shadow"></div>
+
+  <script>
+    (async function () {
+      const sitemapUrl = "https://www.unsubscribed.com/sitemap_pages_1.xml?from=87013556376&to=107882578072";
+      const previewBase = "https://zk5wgofmizb4mqhq-55041261720.shopifypreview.com";
+      const liveBase = "https://www.unsubscribed.com";
+
+      const app = document.getElementById("app");
+      let currentIndex = 0;
+      let pages = [];
+
+      async function fetchSitemap() {
+        try {
+          const response = await fetch(sitemapUrl);
+          const text = await response.text();
+          const parser = new DOMParser();
+          const xmlDoc = parser.parseFromString(text, "application/xml");
+          pages = Array.from(xmlDoc.querySelectorAll("url > loc")).map((loc) => loc.textContent);
+          if (pages.length > 0) {
+            render();
+          } else {
+            app.innerHTML = `<p class='text-red-500'>No pages found in the sitemap.</p>`;
+          }
+        } catch (error) {
+          app.innerHTML = `<p class='text-red-500'>Failed to load the sitemap. Please try again later.</p>`;
+          console.error(error);
+        }
+      }
+
+      function render() {
+        app.innerHTML = `
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <p class="font-bold">Preview URL:</p>
+              <iframe id="previewIframe" src="" class="w-full h-96 border rounded shadow"></iframe>
+              <p id="previewUrl" class="mt-2 text-blue-500"></p>
+            </div>
+            <div>
+              <p class="font-bold">Live URL:</p>
+              <iframe id="liveIframe" src="" class="w-full h-96 border rounded shadow"></iframe>
+              <p id="liveUrl" class="mt-2 text-blue-500"></p>
+            </div>
+          </div>
+          <div class="mt-4 flex justify-between">
+            <button id="prevButton" class="bg-gray-500 text-white px-4 py-2 rounded disabled:opacity-50" disabled>Previous</button>
+            <button id="nextButton" class="bg-blue-500 text-white px-4 py-2 rounded">Next</button>
+          </div>
+        `;
+
+        document.getElementById("prevButton").addEventListener("click", showPrevious);
+        document.getElementById("nextButton").addEventListener("click", showNext);
+
+        updateFrames();
+      }
+
+      function updateFrames() {
+        const previewUrl = pages[currentIndex].replace(liveBase, previewBase);
+        const liveUrl = pages[currentIndex];
+
+        document.getElementById("previewIframe").src = previewUrl;
+        document.getElementById("liveIframe").src = liveUrl;
+
+        document.getElementById("previewUrl").textContent = previewUrl;
+        document.getElementById("liveUrl").textContent = liveUrl;
+
+        document.getElementById("prevButton").disabled = currentIndex === 0;
+        document.getElementById("nextButton").disabled = currentIndex === pages.length - 1;
+      }
+
+      function showPrevious() {
+        if (currentIndex > 0) {
+          currentIndex--;
+          updateFrames();
+        }
+      }
+
+      function showNext() {
+        if (currentIndex < pages.length - 1) {
+          currentIndex++;
+          updateFrames();
+        }
+      }
+
+      fetchSitemap();
+    })();
+  </script>
+</body>
+</html>
